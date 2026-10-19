@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PdfNHF - قارئ ومحرر الـ PDF</title>
+    <title>PdfNHF - محرر وقارئ الـ PDF الذكي</title>
+    <!-- استدعاء مكتبة معالجة ملفات الـ PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -24,7 +26,7 @@
             width: 100%;
             max-width: 500px;
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             padding: 15px;
             background: #ffffff;
             border-radius: 16px;
@@ -32,12 +34,12 @@
         }
         h1 {
             color: #1a73e8;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             margin-bottom: 5px;
         }
         p.subtitle {
             color: #666;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
         .container {
             width: 100%;
@@ -53,13 +55,18 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
             text-align: center;
         }
+        .card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #202124;
+        }
         .btn {
             background: #1a73e8;
             color: white;
             border: none;
             padding: 12px 20px;
             border-radius: 10px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: bold;
             width: 100%;
             cursor: pointer;
@@ -69,8 +76,25 @@
         .btn:hover {
             background: #1557b0;
         }
+        .btn-success {
+            background: #137333;
+        }
+        .btn-success:hover {
+            background: #0f5223;
+        }
         .file-input {
             display: none;
+        }
+        #file-info {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #137333;
+            font-weight: bold;
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #d93025;
         }
     </style>
 </head>
@@ -78,18 +102,56 @@
 
     <header>
         <h1>تطبيق PdfNHF</h1>
-        <p class="subtitle">أدوات PDF سريعة وخفيفة على الهاتف</p>
+        <p class="subtitle">إدارة وتعديل ملفات الـ PDF بكل خفة وسهولة</p>
     </header>
 
     <div class="container">
+        <!-- قسم اختيار الملف -->
         <div class="card">
-            <h3>اختر ملف PDF للبدء</h3>
-            <p style="font-size:0.8rem; color:#777; margin-top:5px;">دمج، تقسيم، وإدارة الصفحات بمرونة</p>
-            <br>
-            <input type="file" id="pdfFile" class="file-input" accept="application/pdf">
-            <button class="btn" onclick="document.getElementById('pdfFile').click()">تصفح الملفات 📄</button>
+            <h3>اختر ملف PDF الأساسي</h3>
+            <input type="file" id="pdfFile1" class="file-input" accept="application/pdf" onchange="handleFileSelect(event)">
+            <button class="btn" onclick="document.getElementById('pdfFile1').click()">اختر الملف 📄</button>
+            <div id="file-info"></div>
+        </div>
+
+        <!-- قسم العمليات -->
+        <div class="card">
+            <h3>أدوات سريعة</h3>
+            <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">استخراج أو تدوير صفحات الملف المحدد</p>
+            <button class="btn btn-success" onclick="getPagesCount()">معرفة عدد الصفحات ومعلوماته 📊</button>
+            <div id="status"></div>
         </div>
     </div>
+
+    <script>
+        let selectedFileBytes = null;
+        let selectedFileName = "";
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFileName = file.name;
+                document.getElementById('file-info').innerText = "تم اختيار: " + file.name;
+                const arrayBuffer = await file.arrayBuffer();
+                selectedFileBytes = arrayBuffer;
+                document.getElementById('status').innerText = "";
+            }
+        }
+
+        async function getPagesCount() {
+            if (!selectedFileBytes) {
+                document.getElementById('status').innerText = "الرجاء اختيار ملف PDF أولاً!";
+                return;
+            }
+            try {
+                const pdfDoc = await PDFLib.PDFDocument.load(selectedFileBytes);
+                const pageCount = pdfDoc.getPageCount();
+                alert("اسم الملف: " + selectedFileName + "\nعدد الصفحات: " + pageCount);
+            } catch (error) {
+                document.getElementById('status').innerText = "حدث خطأ أثناء قراءة الملف.";
+            }
+        }
+    </script>
 
 </body>
 </html>
