@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PdfNHF - محرر وضاغط الـ PDF الذكي</title>
+    <title>PdfNHF - جناح إدارة الـ PDF الذكي</title>
     <!-- مكتبة معالجة وبناء الـ PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-    <!-- مكتبة قراءة ورسم صفحات الـ PDF للضغط الحقيقي -->
+    <!-- مكتبة قراءة ورسم صفحات الـ PDF للعرض والضغط -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -21,7 +21,7 @@
         body {
             background-color: #f4f6f9;
             color: #333;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -29,9 +29,9 @@
         }
         header {
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             padding: 15px;
             background: #ffffff;
             border-radius: 16px;
@@ -39,32 +39,35 @@
         }
         h1 {
             color: #1a73e8;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             margin-bottom: 5px;
         }
         p.subtitle {
             color: #666;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
         .container {
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
         .card {
             background: #ffffff;
-            padding: 20px;
+            padding: 18px;
             border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
         .card h3 {
-            font-size: 1.05rem;
+            font-size: 1rem;
             margin-bottom: 12px;
             color: #202124;
             border-bottom: 2px solid #e8eaed;
             padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .form-group {
             margin-bottom: 12px;
@@ -72,7 +75,7 @@
         }
         label {
             display: block;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #5f6368;
             margin-bottom: 5px;
             font-weight: bold;
@@ -89,33 +92,22 @@
             background: #1a73e8;
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 11px 18px;
             border-radius: 10px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: bold;
             width: 100%;
             cursor: pointer;
             margin-top: 5px;
             transition: background 0.2s;
         }
-        .btn:hover {
-            background: #1557b0;
-        }
-        .btn-success {
-            background: #137333;
-        }
-        .btn-success:hover {
-            background: #0f5223;
-        }
-        .btn-warning {
-            background: #e37400;
-        }
-        .btn-warning:hover {
-            background: #b05a00;
-        }
-        .file-input {
-            display: none;
-        }
+        .btn:hover { background: #1557b0; }
+        .btn-success { background: #137333; }
+        .btn-success:hover { background: #0f5223; }
+        .btn-warning { background: #e37400; }
+        .btn-warning:hover { background: #b05a00; }
+        
+        .file-input { display: none; }
         .file-label {
             display: block;
             padding: 12px;
@@ -128,16 +120,83 @@
             font-weight: bold;
             border: 1px dashed #1a73e8;
         }
+
+        /* عارض الـ PDF الرئيسي */
+        #viewer-container {
+            width: 100%;
+            background: #202124;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            min-height: 250px;
+            max-height: 450px;
+            justify-content: center;
+            color: #aaa;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        #pdfCanvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .viewer-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background: #3c4043;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: white;
+            font-size: 0.8rem;
+        }
+        .viewer-toolbar button {
+            background: #5f6368;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .badge-soon {
+            background: #fce8e6;
+            color: #c5221f;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: normal;
+        }
+        .badge-active {
+            background: #e6f4ea;
+            color: #137333;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .tool-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f1f3f4 !important;
+            color: #80868b !important;
+        }
+
         .result-box {
-            margin-top: 15px;
+            margin-top: 12px;
             padding: 12px;
             background: #e6f4ea;
             border: 1px solid #34a853;
             border-radius: 10px;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #137333;
             display: none;
-            line-height: 1.6;
+            line-height: 1.5;
         }
         #status {
             margin-top: 10px;
@@ -151,328 +210,56 @@
 
     <header>
         <h1>تطبيق PdfNHF</h1>
-        <p class="subtitle">الدمج، التقسيم، والضغط الفعلي للملفات</p>
+        <p class="subtitle">جناح إدارة المستندات والملفات الذكي</p>
     </header>
 
     <div class="container">
         
-        <!-- قسم تحديد الملفات -->
+        <!-- قسم فتح ملف وعرضه مباشرة -->
         <div class="card">
-            <h3>1. اختيار الملفات</h3>
+            <h3>فتح وعرض ملف PDF <span class="badge-active">نشط</span></h3>
             
             <div class="form-group">
-                <label>الملف الأساسي (الأول):</label>
-                <input type="file" id="pdfFile1" class="file-input" accept=".pdf,application/pdf" onchange="updateFileLabel('pdfFile1', 'label1')">
-                <label for="pdfFile1" id="label1" class="file-label" onclick="document.getElementById('pdfFile1').click()">اضغط هنا لاختيار الملف الرئيسي 📄</label>
+                <input type="file" id="pdfFile1" class="file-input" accept=".pdf,application/pdf" onchange="handleMainFileSelect(event)">
+                <label for="pdfFile1" id="label1" class="file-label" onclick="document.getElementById('pdfFile1').click()">اضغط هنا لاختيار وتصفح ملف PDF 📄</label>
             </div>
 
-            <div class="form-group">
+            <!-- مساحة المعاينة الرئيسية -->
+            <div id="viewer-container">
+                <p id="placeholder-text">لا يوجد ملف مفتوح حالياً. اختر ملفاً لعرضه هنا مباشرة.</p>
+                <canvas id="pdfCanvas" style="display:none;"></canvas>
+            </div>
+
+            <div class="viewer-toolbar" id="viewerToolbar" style="display:none;">
+                <button onclick="changePage(-1)">◀ السابق</button>
+                <span id="pageInfo">صفحة 0 / 0</span>
+                <button onclick="changePage(1)">التالي ▶</button>
+            </div>
+
+            <div class="form-group" style="margin-top: 15px;">
                 <label>الملف الثاني (اختياري للدمج):</label>
                 <input type="file" id="pdfFile2" class="file-input" accept=".pdf,application/pdf" onchange="updateFileLabel('pdfFile2', 'label2')">
-                <label for="pdfFile2" id="label2" class="file-label" onclick="document.getElementById('pdfFile2').click()">اضغط هنا لاختيار الملف الثاني 📑</label>
+                <label for="pdfFile2" id="label2" class="file-label" onclick="document.getElementById('pdfFile2').click()">اختر الملف الثاني للدمج 📑</label>
             </div>
         </div>
 
-        <!-- قسم الضغط الحقيقي بمستويات ثلاثية -->
+        <!-- 1. تنظيم الصفحات والملفات -->
         <div class="card">
-            <h3>2. تقليل حجم الملف (تجهيز للمناصات والواتساب) 📉</h3>
+            <h3>1. تنظيم الصفحات والملفات <span class="badge-active">مفعل</span></h3>
             
             <div class="form-group">
-                <label>مستوى الضغط المطلوب:</label>
-                <select id="compressLevel">
-                    <option value="light">خفيف (تقليل بسيط حتى ~20% - أعلى جودة)</option>
-                    <option value="medium" selected>متوسط (توفير بين 25% إلى 60% - للمواقع الحكومية)</option>
-                    <option value="heavy">عالي (توفير أعلى من 60% - للملفات الضخمة جداً)</option>
-                </select>
-            </div>
-
-            <button class="btn btn-warning" onclick="compressPDF()">ضغط الملف وتحميل النتيجة ⚡</button>
-
-            <div id="compressResult" class="result-box"></div>
-        </div>
-
-        <!-- قسم الدمج المرن -->
-        <div class="card">
-            <h3>3. خيارات الدمج والإدراج</h3>
-            
-            <div class="form-group">
-                <label>أين تريد إدراج الملف الثاني؟</label>
+                <label>أين تريد إدراج الملف الثاني؟ (الدمج)</label>
                 <select id="insertPosition" onchange="togglePageInput()">
                     <option value="end">في نهاية الملف الأساسي</option>
-                    <option value="start">في بداية الملف الأساسي (قبل الصفحة 1)</option>
-                    <option value="custom">بعد رقم صفحة محددة...</option>
+                    <option value="start">في بداية الملف الأساسي</option>
+                    <option value="custom">بعد صفحة محددة...</option>
                 </select>
             </div>
-
             <div class="form-group" id="customPageGroup" style="display: none;">
-                <label>أدرج الملف الثاني فوراً بعد الصفحة رقم:</label>
-                <input type="number" id="insertAfterPage" min="1" value="1" placeholder="مثال: 3">
+                <label>رقم الصفحة:</label>
+                <input type="number" id="insertAfterPage" min="1" value="1">
             </div>
-
             <button class="btn btn-success" onclick="mergePDFs()">دمج واستخراج الملف الجديد 🔄</button>
-        </div>
 
-        <!-- قسم التقسيم -->
-        <div class="card">
-            <h3>4. تقسيم/استخراج صفحات من الملف الأساسي</h3>
-            
-            <div class="form-group">
-                <label>أرقام الصفحات المطلوبة (مفصولة بفاصلة):</label>
-                <input type="text" id="extractPages" placeholder="مثال: 1, 3, 5 أو 2-6">
-            </div>
-
-            <button class="btn" onclick="extractPDFPages()">استخراج الصفحات المحددة ✂️</button>
-        </div>
-
-        <div id="status"></div>
-    </div>
-
-    <script>
-        function updateFileLabel(inputId, labelId) {
-            const input = document.getElementById(inputId);
-            const label = document.getElementById(labelId);
-            const status = document.getElementById('status');
-
-            if (input.files && input.files.length > 0) {
-                const file = input.files[0];
-                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                label.innerText = "تم الاختيار: " + file.name + " (" + sizeMB + " MB)";
-                label.style.background = "#e6f4ea";
-                label.style.color = "#137333";
-                label.style.borderColor = "#137333";
-                status.innerText = "✅ تم استلام الملف: " + file.name;
-                status.style.color = "#137333";
-            }
-        }
-
-        function togglePageInput() {
-            const pos = document.getElementById('insertPosition').value;
-            document.getElementById('customPageGroup').style.display = (pos === 'custom') ? 'block' : 'none';
-        }
-
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        async function compressPDF() {
-            const fileInput = document.getElementById('pdfFile1');
-            const file = fileInput.files ? fileInput.files[0] : null;
-            const status = document.getElementById('status');
-            const resultBox = document.getElementById('compressResult');
-            const level = document.getElementById('compressLevel').value;
-
-            if (!file) {
-                status.innerText = "❌ يرجى اختيار الملف الأساسي أولاً للضغط.";
-                status.style.color = "#d93025";
-                return;
-            }
-
-            status.innerText = "⏳ جاري المعالجة والضغط الدقيق لصفحات الملف...";
-            status.style.color = "#e37400";
-            resultBox.style.display = "none";
-
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                const originalSize = file.size;
-
-                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-                const pdfjsDoc = await loadingTask.promise;
-                const numPages = pdfjsDoc.numPages;
-
-                const newPdfDoc = await PDFLib.PDFDocument.create();
-
-                let scale = 1.5;
-                let quality = 0.90;
-
-                if (level === 'medium') {
-                    scale = 1.1;
-                    quality = 0.65;
-                } else if (level === 'heavy') {
-                    scale = 0.85;
-                    quality = 0.45;
-                }
-
-                for (let i = 1; i <= numPages; i++) {
-                    const page = await pdfjsDoc.getPage(i);
-                    const viewport = page.getViewport({ scale: scale });
-                    
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
-
-                    const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
-                    const jpgImageBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
-                    
-                    const embeddedImage = await newPdfDoc.embedJpg(jpgImageBytes);
-                    const pdfPage = newPdfDoc.addPage([viewport.width / scale, viewport.height / scale]);
-                    pdfPage.drawImage(embeddedImage, {
-                        x: 0,
-                        y: 0,
-                        width: viewport.width / scale,
-                        height: viewport.height / scale,
-                    });
-                }
-
-                const compressedBytes = await newPdfDoc.save({ useObjectStreams: true });
-                const compressedSize = compressedBytes.length;
-                const savedSize = originalSize - compressedSize;
-                const percentSaved = Math.max(0, ((savedSize / originalSize) * 100)).toFixed(1);
-
-                downloadFile(compressedBytes, "Compressed_" + file.name);
-
-                status.innerText = "✅ تم ضغط الملف بنجاح!";
-                status.style.color = "#137333";
-
-                resultBox.innerHTML = `
-                    <strong>📊 نتيجة الضغط:</strong><br>
-                    • الحجم الأصلي: <b>${formatBytes(originalSize)}</b><br>
-                    • الحجم الجديد: <b>${formatBytes(compressedSize)}</b><br>
-                    • نسبة التوفير: <b>${percentSaved}%</b> (توفير ${savedSize > 0 ? formatBytes(savedSize) : '0 KB'})
-                `;
-                resultBox.style.display = "block";
-
-            } catch (err) {
-                console.error(err);
-                status.innerText = "❌ حدث خطأ أثناء ضغط الملف.";
-                status.style.color = "#d93025";
-            }
-        }
-
-        async function mergePDFs() {
-            const file1 = document.getElementById('pdfFile1').files[0];
-            const file2 = document.getElementById('pdfFile2').files[0];
-            const status = document.getElementById('status');
-
-            if (!file1 || !file2) {
-                status.innerText = "❌ يرجى اختيار الملفين الأول والثاني للدمج.";
-                status.style.color = "#d93025";
-                return;
-            }
-
-            status.innerText = "⏳ جاري الدمج والمعالجة...";
-            status.style.color = "#1a73e8";
-
-            try {
-                const doc1Bytes = await file1.arrayBuffer();
-                const doc2Bytes = await file2.arrayBuffer();
-
-                const pdfDoc1 = await PDFLib.PDFDocument.load(doc1Bytes);
-                const pdfDoc2 = await PDFLib.PDFDocument.load(doc2Bytes);
-
-                const mergedPdf = await PDFLib.PDFDocument.create();
-
-                const doc1PagesCount = pdfDoc1.getPageCount();
-                const doc2PagesCount = pdfDoc2.getPageCount();
-
-                const position = document.getElementById('insertPosition').value;
-                let insertIndex = doc1PagesCount;
-
-                if (position === 'start') {
-                    insertIndex = 0;
-                } else if (position === 'custom') {
-                    const customPage = parseInt(document.getElementById('insertAfterPage').value);
-                    if (isNaN(customPage) || customPage < 1 || customPage > doc1PagesCount) {
-                        status.innerText = "❌ رقم الصفحة المحددة غير صحيح.";
-                        status.style.color = "#d93025";
-                        return;
-                    }
-                    insertIndex = customPage;
-                }
-
-                const pages1 = await mergedPdf.copyPages(pdfDoc1, pdfDoc1.getPageIndices());
-                const pages2 = await mergedPdf.copyPages(pdfDoc2, pdfDoc2.getPageIndices());
-
-                for (let i = 0; i < insertIndex; i++) mergedPdf.addPage(pages1[i]);
-                for (let i = 0; i < doc2PagesCount; i++) mergedPdf.addPage(pages2[i]);
-                for (let i = insertIndex; i < doc1PagesCount; i++) mergedPdf.addPage(pages1[i]);
-
-                const mergedPdfBytes = await mergedPdf.save({ useObjectStreams: true });
-                downloadFile(mergedPdfBytes, "Merged_Document.pdf");
-                status.innerText = "✅ تم الدمج وتنزيل الملف بنجاح!";
-                status.style.color = "#137333";
-
-            } catch (err) {
-                status.innerText = "❌ حدث خطأ أثناء عملية الدمج.";
-                status.style.color = "#d93025";
-            }
-        }
-
-        async function extractPDFPages() {
-            const file1 = document.getElementById('pdfFile1').files[0];
-            const pagesInput = document.getElementById('extractPages').value.trim();
-            const status = document.getElementById('status');
-
-            if (!file1) {
-                status.innerText = "❌ يرجى اختيار الملف الأساسي أولاً.";
-                status.style.color = "#d93025";
-                return;
-            }
-            if (!pagesInput) {
-                status.innerText = "❌ يرجى كتابة أرقام الصفحات المراد استخراجها.";
-                status.style.color = "#d93025";
-                return;
-            }
-
-            status.innerText = "⏳ جاري استخراج الصفحات...";
-            status.style.color = "#1a73e8";
-
-            try {
-                const docBytes = await file1.arrayBuffer();
-                const pdfDoc = await PDFLib.PDFDocument.load(docBytes);
-                const newPdf = await PDFLib.PDFDocument.create();
-                const totalPages = pdfDoc.getPageCount();
-
-                let selectedIndices = [];
-                const parts = pagesInput.split(',');
-
-                for (let part of parts) {
-                    part = part.trim();
-                    if (part.includes('-')) {
-                        const [start, end] = part.split('-').map(num => parseInt(num));
-                        for (let i = start; i <= end; i++) {
-                            if (i >= 1 && i <= totalPages) selectedIndices.push(i - 1);
-                        }
-                    } else {
-                        const pageNum = parseInt(part);
-                        if (pageNum >= 1 && pageNum <= totalPages) selectedIndices.push(pageNum - 1);
-                    }
-                }
-
-                if (selectedIndices.length === 0) {
-                    status.innerText = "❌ لم يتم العثور على أرقام صفحات صالحة ضمن حدود المستند.";
-                    status.style.color = "#d93025";
-                    return;
-                }
-
-                const copiedPages = await newPdf.copyPages(pdfDoc, selectedIndices);
-                copiedPages.forEach(page => newPdf.addPage(page));
-
-                const newPdfBytes = await newPdf.save({ useObjectStreams: true });
-                downloadFile(newPdfBytes, "Extracted_Pages.pdf");
-                status.innerText = "✅ تم استخراج الصفحات بنجاح!";
-                status.style.color = "#137333";
-
-            } catch (err) {
-                status.innerText = "❌ حدث خطأ أثناء استخراج الصفحات.";
-                status.style.color = "#d93025";
-            }
-        }
-
-        function downloadFile(bytes, filename) {
-            const blob = new Blob([bytes], { type: "application/pdf" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
-        }
-    </script>
-
-</body>
-</html>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>استخراج صفحات (تق
