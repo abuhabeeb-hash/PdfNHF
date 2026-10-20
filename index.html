@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PdfNHF - محرر وقارئ الـ PDF الذكي</title>
-    <!-- استدعاء مكتبة معالجة ملفات الـ PDF -->
+    <title>PdfNHF - دمج وتقسيم ذكي</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
         * {
@@ -53,12 +52,32 @@
             padding: 20px;
             border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            text-align: center;
         }
         .card h3 {
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            font-size: 1.05rem;
+            margin-bottom: 12px;
             color: #202124;
+            border-bottom: 2px solid #e8eaed;
+            padding-bottom: 8px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+            text-align: right;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #5f6368;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"], input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
         }
         .btn {
             background: #1a73e8;
@@ -70,7 +89,7 @@
             font-weight: bold;
             width: 100%;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 5px;
             transition: background 0.2s;
         }
         .btn:hover {
@@ -85,16 +104,23 @@
         .file-input {
             display: none;
         }
-        #file-info {
-            margin-top: 10px;
+        .file-label {
+            display: block;
+            padding: 10px;
+            background: #e8f0fe;
+            color: #1967d2;
+            border-radius: 8px;
+            text-align: center;
             font-size: 0.85rem;
-            color: #137333;
+            cursor: pointer;
             font-weight: bold;
+            border: 1px dashed #1a73e8;
         }
         #status {
             margin-top: 10px;
             font-size: 0.85rem;
-            color: #d93025;
+            text-align: center;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -102,54 +128,220 @@
 
     <header>
         <h1>تطبيق PdfNHF</h1>
-        <p class="subtitle">إدارة وتعديل ملفات الـ PDF بكل خفة وسهولة</p>
+        <p class="subtitle">أدوات الدمج والتقسيم بمرونة وحرية كاملة</p>
     </header>
 
     <div class="container">
-        <!-- قسم اختيار الملف -->
+        
+        <!-- قسم تحديد الملفات -->
         <div class="card">
-            <h3>اختر ملف PDF الأساسي</h3>
-            <input type="file" id="pdfFile1" class="file-input" accept="application/pdf" onchange="handleFileSelect(event)">
-            <button class="btn" onclick="document.getElementById('pdfFile1').click()">اختر الملف 📄</button>
-            <div id="file-info"></div>
+            <h3>1. اختيار الملفات</h3>
+            
+            <div class="form-group">
+                <label>الملف الأساسي (الأول):</label>
+                <input type="file" id="pdfFile1" class="file-input" accept="application/pdf" onchange="updateFileLabel('pdfFile1', 'label1')">
+                <label for="pdfFile1" id="label1" class="file-label">اختر الملف الرئيسي 📄</label>
+            </div>
+
+            <div class="form-group">
+                <label>الملف الثاني (المراد إدراجه):</label>
+                <input type="file" id="pdfFile2" class="file-input" accept="application/pdf" onchange="updateFileLabel('pdfFile2', 'label2')">
+                <label for="pdfFile2" id="label2" class="file-label">اختر الملف الثاني 📑</label>
+            </div>
         </div>
 
-        <!-- قسم العمليات -->
+        <!-- قسم الدمج المرن -->
         <div class="card">
-            <h3>أدوات سريعة</h3>
-            <p style="font-size:0.8rem; color:#666; margin-bottom:10px;">استخراج أو تدوير صفحات الملف المحدد</p>
-            <button class="btn btn-success" onclick="getPagesCount()">معرفة عدد الصفحات ومعلوماته 📊</button>
-            <div id="status"></div>
+            <h3>2. خيارات الدمج والإدراج</h3>
+            
+            <div class="form-group">
+                <label>أين تريد إدراج الملف الثاني؟</label>
+                <select id="insertPosition" onchange="togglePageInput()">
+                    <option value="end">في نهاية الملف الأساسي</option>
+                    <option value="start">في بداية الملف الأساسي (قبل الصفحة 1)</option>
+                    <option value="custom">بعد رقم صفحة محددة...</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="customPageGroup" style="display: none;">
+                <label>أدرج الملف الثاني فوراً بعد الصفحة رقم:</label>
+                <input type="number" id="insertAfterPage" min="1" value="1" placeholder="مثال: 3">
+            </div>
+
+            <button class="btn btn-success" onclick="mergePDFs()">دمج واستخراج الملف الجديد 🔄</button>
         </div>
+
+        <!-- قسم التقسيم -->
+        <div class="card">
+            <h3>3. تقسيم/استخراج صفحات من الملف الأساسي</h3>
+            
+            <div class="form-group">
+                <label>أرقام الصفحات المطلوبة (مفصولة بفاصلة):</label>
+                <input type="text" id="extractPages" placeholder="مثال: 1, 3, 5 أو 2-6">
+            </div>
+
+            <button class="btn" onclick="extractPDFPages()">استخراج الصفحات المحددة ✂️</button>
+        </div>
+
+        <div id="status"></div>
     </div>
 
     <script>
-        let selectedFileBytes = null;
-        let selectedFileName = "";
-
-        async function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file) {
-                selectedFileName = file.name;
-                document.getElementById('file-info').innerText = "تم اختيار: " + file.name;
-                const arrayBuffer = await file.arrayBuffer();
-                selectedFileBytes = arrayBuffer;
-                document.getElementById('status').innerText = "";
+        function updateFileLabel(inputId, labelId) {
+            const input = document.getElementById(inputId);
+            const label = document.getElementById(labelId);
+            if (input.files.length > 0) {
+                label.innerText = "تم الاختيار: " + input.files[0].name;
+                label.style.background = "#e6f4ea";
+                label.style.color = "#137333";
+                label.style.borderColor = "#137333";
             }
         }
 
-        async function getPagesCount() {
-            if (!selectedFileBytes) {
-                document.getElementById('status').innerText = "الرجاء اختيار ملف PDF أولاً!";
+        function togglePageInput() {
+            const pos = document.getElementById('insertPosition').value;
+            document.getElementById('customPageGroup').style.display = (pos === 'custom') ? 'block' : 'none';
+        }
+
+        async function mergePDFs() {
+            const file1 = document.getElementById('pdfFile1').files[0];
+            const file2 = document.getElementById('pdfFile2').files[0];
+            const status = document.getElementById('status');
+
+            if (!file1 || !file2) {
+                status.innerText = "❌ يرجى اختيار الملفين الأول والثاني للدمج.";
+                status.style.color = "#d93025";
                 return;
             }
+
+            status.innerText = "⏳ جاري الدمج والمعالجة...";
+            status.style.color = "#1a73e8";
+
             try {
-                const pdfDoc = await PDFLib.PDFDocument.load(selectedFileBytes);
-                const pageCount = pdfDoc.getPageCount();
-                alert("اسم الملف: " + selectedFileName + "\nعدد الصفحات: " + pageCount);
-            } catch (error) {
-                document.getElementById('status').innerText = "حدث خطأ أثناء قراءة الملف.";
+                const doc1Bytes = await file1.arrayBuffer();
+                const doc2Bytes = await file2.arrayBuffer();
+
+                const pdfDoc1 = await PDFLib.PDFDocument.load(doc1Bytes);
+                const pdfDoc2 = await PDFLib.PDFDocument.load(doc2Bytes);
+
+                const mergedPdf = await PDFLib.PDFDocument.create();
+
+                const doc1PagesCount = pdfDoc1.getPageCount();
+                const doc2PagesCount = pdfDoc2.getPageCount();
+
+                const position = document.getElementById('insertPosition').value;
+                let insertIndex = doc1PagesCount; // Default end
+
+                if (position === 'start') {
+                    insertIndex = 0;
+                } else if (position === 'custom') {
+                    const customPage = parseInt(document.getElementById('insertAfterPage').value);
+                    if (isNaN(customPage) || customPage < 1 || customPage > doc1PagesCount) {
+                        status.innerText = "❌ رقم الصفحة المحددة غير صحيح (الملف يحتوي " + doc1PagesCount + " صفحة).";
+                        status.style.color = "#d93025";
+                        return;
+                    }
+                    insertIndex = customPage;
+                }
+
+                // نسخ الصفحات بالترتيب المحدد
+                const pages1 = await mergedPdf.copyPages(pdfDoc1, pdfDoc1.getPageIndices());
+                const pages2 = await mergedPdf.copyPages(pdfDoc2, pdfDoc2.getPageIndices());
+
+                // إضافة الجزء الأول من الملف الأساسي
+                for (let i = 0; i < insertIndex; i++) {
+                    mergedPdf.addPage(pages1[i]);
+                }
+
+                // إضافة جميع صفحات الملف الثاني
+                for (let i = 0; i < doc2PagesCount; i++) {
+                    mergedPdf.addPage(pages2[i]);
+                }
+
+                // إضافة باقي صفحات الملف الأساسي
+                for (let i = insertIndex; i < doc1PagesCount; i++) {
+                    mergedPdf.addPage(pages1[i]);
+                }
+
+                const mergedPdfBytes = await mergedPdf.save();
+                downloadFile(mergedPdfBytes, "Merged_Document.pdf");
+                status.innerText = "✅ تم الدمج وتنزيل الملف بنجاح!";
+                status.style.color = "#137333";
+
+            } catch (err) {
+                status.innerText = "❌ حدث خطأ أثناء عملية الدمج.";
+                status.style.color = "#d93025";
             }
+        }
+
+        async function extractPDFPages() {
+            const file1 = document.getElementById('pdfFile1').files[0];
+            const pagesInput = document.getElementById('extractPages').value.trim();
+            const status = document.getElementById('status');
+
+            if (!file1) {
+                status.innerText = "❌ يرجى اختيار الملف الأساسي أولاً.";
+                status.style.color = "#d93025";
+                return;
+            }
+            if (!pagesInput) {
+                status.innerText = "❌ يرجى كتابة أرقام الصفحات المراد استخراجها.";
+                status.style.color = "#d93025";
+                return;
+            }
+
+            status.innerText = "⏳ جاري استخراج الصفحات...";
+            status.style.color = "#1a73e8";
+
+            try {
+                const docBytes = await file1.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(docBytes);
+                const newPdf = await PDFLib.PDFDocument.create();
+                const totalPages = pdfDoc.getPageCount();
+
+                // تحويل المدخلات إلى أرقام صفحات (0-based)
+                let selectedIndices = [];
+                const parts = pagesInput.split(',');
+
+                for (let part of parts) {
+                    part = part.trim();
+                    if (part.includes('-')) {
+                        const [start, end] = part.split('-').map(num => parseInt(num));
+                        for (let i = start; i <= end; i++) {
+                            if (i >= 1 && i <= totalPages) selectedIndices.push(i - 1);
+                        }
+                    } else {
+                        const pageNum = parseInt(part);
+                        if (pageNum >= 1 && pageNum <= totalPages) selectedIndices.push(pageNum - 1);
+                    }
+                }
+
+                if (selectedIndices.length === 0) {
+                    status.innerText = "❌ لم يتم العثور على أرقام صفحات صالحة ضمن حدود المستند.";
+                    status.style.color = "#d93025";
+                    return;
+                }
+
+                const copiedPages = await newPdf.copyPages(pdfDoc, selectedIndices);
+                copiedPages.forEach(page => newPdf.addPage(page));
+
+                const newPdfBytes = await newPdf.save();
+                downloadFile(newPdfBytes, "Extracted_Pages.pdf");
+                status.innerText = "✅ تم استخراج الصفحات بنجاح!";
+                status.style.color = "#137333";
+
+            } catch (err) {
+                status.innerText = "❌ حدث خطأ أثناء استخراج الصفحات.";
+                status.style.color = "#d93025";
+            }
+        }
+
+        function downloadFile(bytes, filename) {
+            const blob = new Blob([bytes], { type: "application/pdf" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
         }
     </script>
 
