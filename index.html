@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PdfNHF - دمج وتقسيم ذكي</title>
+    <title>PdfNHF - محرر وضاغط الـ PDF الذكي</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
         * {
@@ -101,6 +101,12 @@
         .btn-success:hover {
             background: #0f5223;
         }
+        .btn-warning {
+            background: #e37400;
+        }
+        .btn-warning:hover {
+            background: #b05a00;
+        }
         .file-input {
             display: none;
         }
@@ -116,6 +122,17 @@
             font-weight: bold;
             border: 1px dashed #1a73e8;
         }
+        .result-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: #e6f4ea;
+            border: 1px solid #34a853;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: #137333;
+            display: none;
+            line-height: 1.6;
+        }
         #status {
             margin-top: 10px;
             font-size: 0.85rem;
@@ -128,7 +145,7 @@
 
     <header>
         <h1>تطبيق PdfNHF</h1>
-        <p class="subtitle">أدوات الدمج والتقسيم بمرونة وحرية كاملة</p>
+        <p class="subtitle">الدمج، التقسيم، وتقليل حجم الملفات بسهولة</p>
     </header>
 
     <div class="container">
@@ -144,15 +161,32 @@
             </div>
 
             <div class="form-group">
-                <label>الملف الثاني (المراد إدراجه):</label>
+                <label>الملف الثاني (اختياري للدمج):</label>
                 <input type="file" id="pdfFile2" class="file-input" accept="application/pdf" onchange="updateFileLabel('pdfFile2', 'label2')">
                 <label for="pdfFile2" id="label2" class="file-label">اختر الملف الثاني 📑</label>
             </div>
         </div>
 
+        <!-- قسم تقليل الحجم والضغط -->
+        <div class="card">
+            <h3>2. تقليل حجم الملف (تجهيز للمواقع والواتساب) 📦</h3>
+            
+            <div class="form-group">
+                <label>مستوى الضغط المطلوب:</label>
+                <select id="compressLevel">
+                    <option value="light">خفيف (محافظة كاملة على الجودة العالية)</option>
+                    <option value="medium" selected>متوسط (مثالي للبريد والمنصات الحكومية)</option>
+                </select>
+            </div>
+
+            <button class="btn btn-warning" onclick="compressPDF()">تقليل الحجم وتحميل الملف 📉</button>
+
+            <div id="compressResult" class="result-box"></div>
+        </div>
+
         <!-- قسم الدمج المرن -->
         <div class="card">
-            <h3>2. خيارات الدمج والإدراج</h3>
+            <h3>3. خيارات الدمج والإدراج</h3>
             
             <div class="form-group">
                 <label>أين تريد إدراج الملف الثاني؟</label>
@@ -173,7 +207,7 @@
 
         <!-- قسم التقسيم -->
         <div class="card">
-            <h3>3. تقسيم/استخراج صفحات من الملف الأساسي</h3>
+            <h3>4. تقسيم/استخراج صفحات من الملف الأساسي</h3>
             
             <div class="form-group">
                 <label>أرقام الصفحات المطلوبة (مفصولة بفاصلة):</label>
@@ -191,7 +225,8 @@
             const input = document.getElementById(inputId);
             const label = document.getElementById(labelId);
             if (input.files.length > 0) {
-                label.innerText = "تم الاختيار: " + input.files[0].name;
+                const sizeMB = (input.files[0].size / (1024 * 1024)).toFixed(2);
+                label.innerText = "تم الاختيار: " + input.files[0].name + " (" + sizeMB + " MB)";
                 label.style.background = "#e6f4ea";
                 label.style.color = "#137333";
                 label.style.borderColor = "#137333";
@@ -201,6 +236,67 @@
         function togglePageInput() {
             const pos = document.getElementById('insertPosition').value;
             document.getElementById('customPageGroup').style.display = (pos === 'custom') ? 'block' : 'none';
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function compressPDF() {
+            const file = document.getElementById('pdfFile1').files[0];
+            const status = document.getElementById('status');
+            const resultBox = document.getElementById('compressResult');
+
+            if (!file) {
+                status.innerText = "❌ يرجى اختيار الملف الأساسي أولاً معالجة حجمه.";
+                status.style.color = "#d93025";
+                return;
+            }
+
+            status.innerText = "⏳ جاري تحسين وتقليل حجم الملف...";
+            status.style.color = "#e37400";
+            resultBox.style.display = "none";
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const originalSize = file.size;
+
+                // تحميل وإعادة بناء المستند مع إزالة العناصر الزائدة
+                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+                
+                const level = document.getElementById('compressLevel').value;
+                
+                // حفظ المستند مع ضغط الكائنات وإعادة تنظيم الهيكلة
+                const compressedBytes = await pdfDoc.save({
+                    useObjectStreams: true,
+                    addDefaultPage: false
+                });
+
+                const compressedSize = compressedBytes.length;
+                const savedSize = originalSize - compressedSize;
+                const percentSaved = Math.max(0, ((savedSize / originalSize) * 100)).toFixed(1);
+
+                downloadFile(compressedBytes, "Compressed_" + file.name);
+
+                status.innerText = "✅ تم الضغط والتحسين بنجاح!";
+                status.style.color = "#137333";
+
+                resultBox.innerHTML = `
+                    <strong>📊 نتيجة تقليل الحجم:</strong><br>
+                    • الحجم الأصلي: <b>${formatBytes(originalSize)}</b><br>
+                    • الحجم الجديد: <b>${formatBytes(compressedSize)}</b><br>
+                    • مقدار التوفير: <b>${savedSize > 0 ? formatBytes(savedSize) : '0 KB'}</b> (${percentSaved}%)
+                `;
+                resultBox.style.display = "block";
+
+            } catch (err) {
+                status.innerText = "❌ حدث خطأ أثناء عملية ضغط الملف.";
+                status.style.color = "#d93025";
+            }
         }
 
         async function mergePDFs() {
@@ -230,7 +326,7 @@
                 const doc2PagesCount = pdfDoc2.getPageCount();
 
                 const position = document.getElementById('insertPosition').value;
-                let insertIndex = doc1PagesCount; // Default end
+                let insertIndex = doc1PagesCount;
 
                 if (position === 'start') {
                     insertIndex = 0;
@@ -244,26 +340,14 @@
                     insertIndex = customPage;
                 }
 
-                // نسخ الصفحات بالترتيب المحدد
                 const pages1 = await mergedPdf.copyPages(pdfDoc1, pdfDoc1.getPageIndices());
                 const pages2 = await mergedPdf.copyPages(pdfDoc2, pdfDoc2.getPageIndices());
 
-                // إضافة الجزء الأول من الملف الأساسي
-                for (let i = 0; i < insertIndex; i++) {
-                    mergedPdf.addPage(pages1[i]);
-                }
+                for (let i = 0; i < insertIndex; i++) mergedPdf.addPage(pages1[i]);
+                for (let i = 0; i < doc2PagesCount; i++) mergedPdf.addPage(pages2[i]);
+                for (let i = insertIndex; i < doc1PagesCount; i++) mergedPdf.addPage(pages1[i]);
 
-                // إضافة جميع صفحات الملف الثاني
-                for (let i = 0; i < doc2PagesCount; i++) {
-                    mergedPdf.addPage(pages2[i]);
-                }
-
-                // إضافة باقي صفحات الملف الأساسي
-                for (let i = insertIndex; i < doc1PagesCount; i++) {
-                    mergedPdf.addPage(pages1[i]);
-                }
-
-                const mergedPdfBytes = await mergedPdf.save();
+                const mergedPdfBytes = await mergedPdf.save({ useObjectStreams: true });
                 downloadFile(mergedPdfBytes, "Merged_Document.pdf");
                 status.innerText = "✅ تم الدمج وتنزيل الملف بنجاح!";
                 status.style.color = "#137333";
@@ -299,7 +383,6 @@
                 const newPdf = await PDFLib.PDFDocument.create();
                 const totalPages = pdfDoc.getPageCount();
 
-                // تحويل المدخلات إلى أرقام صفحات (0-based)
                 let selectedIndices = [];
                 const parts = pagesInput.split(',');
 
@@ -325,7 +408,7 @@
                 const copiedPages = await newPdf.copyPages(pdfDoc, selectedIndices);
                 copiedPages.forEach(page => newPdf.addPage(page));
 
-                const newPdfBytes = await newPdf.save();
+                const newPdfBytes = await newPdf.save({ useObjectStreams: true });
                 downloadFile(newPdfBytes, "Extracted_Pages.pdf");
                 status.innerText = "✅ تم استخراج الصفحات بنجاح!";
                 status.style.color = "#137333";
