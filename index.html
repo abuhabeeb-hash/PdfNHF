@@ -173,19 +173,20 @@
             </div>
         </div>
 
-        <!-- قسم الضغط الحقيقي -->
+        <!-- قسم الضغط الحقيقي بمستويات ثلاثية -->
         <div class="card">
-            <h3>2. تقليل حجم الملف الفعلي (للآبار والمنصات) 📉</h3>
+            <h3>2. تقليل حجم الملف (تجهيز للمناصات والواتساب) 📉</h3>
             
             <div class="form-group">
-                <label>مستوى الضغط:</label>
+                <label>مستوى الضغط المطلوبة:</label>
                 <select id="compressLevel">
-                    <option value="light">خفيف (جودة عالية جداً وتوفير ممتاز)</option>
-                    <option value="medium" selected>متوسط (مثالي للمواقع الحكومية والواتساب)</option>
+                    <option value="light">خفيف (تقليل بسيط حتى ~20% - أعلى جودة)</option>
+                    <option value="medium" selected>متوسط (توفير بين 25% إلى 60% - للمواقع الحكومية)</option>
+                    <option value="heavy">عالي (توفير أعلى من 60% - للملفات الضخمة جداً)</option>
                 </select>
             </div>
 
-            <button class="btn btn-warning" onclick="compressPDF()">ضغط الملف وتقليل حجمه ⚡</button>
+            <button class="btn btn-warning" onclick="compressPDF()">ضغط الملف وتحميل النتيجة ⚡</button>
 
             <div id="compressResult" class="result-box"></div>
         </div>
@@ -264,7 +265,7 @@
                 return;
             }
 
-            status.innerText = "⏳ جاري معالجة وضغط صفحات الملف...";
+            status.innerText = "⏳ جاري المعالجة والضغط الدقيق لصفحات الملف...";
             status.style.color = "#e37400";
             resultBox.style.display = "none";
 
@@ -272,20 +273,22 @@
                 const arrayBuffer = await file.arrayBuffer();
                 const originalSize = file.size;
 
-                // تحميل الملف باستخدام PDF.js لقراءة الصفحات
                 const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
                 const pdfjsDoc = await loadingTask.promise;
                 const numPages = pdfjsDoc.numPages;
 
-                // إنشاء ملف PDF جديد باستخدام pdf-lib
                 const newPdfDoc = await PDFLib.PDFDocument.create();
 
-                // تحديد دقة وجودة الضغط بناءً على اختيار المستخدم
-                let scale = 1.0;
-                let quality = 0.65; // متوسط
-                if (level === 'light') {
-                    scale = 1.2;
-                    quality = 0.80; // خفيف
+                // تحديد المعايير بدقة بناءً على المستوى المطلوب
+                let scale = 1.5;
+                let quality = 0.90; // خفيف (حتى 20%)
+
+                if (level === 'medium') {
+                    scale = 1.1;
+                    quality = 0.65; // متوسط (25% إلى 60%)
+                } else if (level === 'heavy') {
+                    scale = 0.85;
+                    quality = 0.45; // عالي (أعلى من 60%)
                 }
 
                 for (let i = 1; i <= numPages; i++) {
@@ -299,17 +302,16 @@
 
                     await page.render({ canvasContext: context, viewport: viewport }).promise;
 
-                    // تحويل الصفحة إلى صورة مضغوطة بجودة محسنة
                     const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
                     const jpgImageBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
                     
                     const embeddedImage = await newPdfDoc.embedJpg(jpgImageBytes);
-                    const pdfPage = newPdfDoc.addPage([viewport.width, viewport.height]);
+                    const pdfPage = newPdfDoc.addPage([viewport.width / scale, viewport.height / scale]);
                     pdfPage.drawImage(embeddedImage, {
                         x: 0,
                         y: 0,
-                        width: viewport.width,
-                        height: viewport.height,
+                        width: viewport.width / scale,
+                        height: viewport.height / scale,
                     });
                 }
 
@@ -324,10 +326,10 @@
                 status.style.color = "#137333";
 
                 resultBox.innerHTML = `
-                    <strong>📊 نتيجة الضغط الفعلي:</strong><br>
+                    <strong>📊 نتيجة الضغط:</strong><br>
                     • الحجم الأصلي: <b>${formatBytes(originalSize)}</b><br>
                     • الحجم الجديد: <b>${formatBytes(compressedSize)}</b><br>
-                    • مقدار التوفير: <b>${savedSize > 0 ? formatBytes(savedSize) : '0 KB'}</b> (${percentSaved}%)
+                    • نسبة التوفير: <b>${percentSaved}%</b> (توفير ${savedSize > 0 ? formatBytes(savedSize) : '0 KB'})
                 `;
                 resultBox.style.display = "block";
 
@@ -398,74 +400,4 @@
         }
 
         async function extractPDFPages() {
-            const file1 = document.getElementById('pdfFile1').files[0];
-            const pagesInput = document.getElementById('extractPages').value.trim();
-            const status = document.getElementById('status');
-
-            if (!file1) {
-                status.innerText = "❌ يرجى اختيار الملف الأساسي أولاً.";
-                status.style.color = "#d93025";
-                return;
-            }
-            if (!pagesInput) {
-                status.innerText = "❌ يرجى كتابة أرقام الصفحات المراد استخراجها.";
-                status.style.color = "#d93025";
-                return;
-            }
-
-            status.innerText = "⏳ جاري استخراج الصفحات...";
-            status.style.color = "#1a73e8";
-
-            try {
-                const docBytes = await file1.arrayBuffer();
-                const pdfDoc = await PDFLib.PDFDocument.load(docBytes);
-                const newPdf = await PDFLib.PDFDocument.create();
-                const totalPages = pdfDoc.getPageCount();
-
-                let selectedIndices = [];
-                const parts = pagesInput.split(',');
-
-                for (let part of parts) {
-                    part = part.trim();
-                    if (part.includes('-')) {
-                        const [start, end] = part.split('-').map(num => parseInt(num));
-                        for (let i = start; i <= end; i++) {
-                            if (i >= 1 && i <= totalPages) selectedIndices.push(i - 1);
-                        }
-                    } else {
-                        const pageNum = parseInt(part);
-                        if (pageNum >= 1 && pageNum <= totalPages) selectedIndices.push(pageNum - 1);
-                    }
-                }
-
-                if (selectedIndices.length === 0) {
-                    status.innerText = "❌ لم يتم العثور على أرقام صفحات صالحة ضمن حدود المستند.";
-                    status.style.color = "#d93025";
-                    return;
-                }
-
-                const copiedPages = await newPdf.copyPages(pdfDoc, selectedIndices);
-                copiedPages.forEach(page => newPdf.addPage(page));
-
-                const newPdfBytes = await newPdf.save({ useObjectStreams: true });
-                downloadFile(newPdfBytes, "Extracted_Pages.pdf");
-                status.innerText = "✅ تم استخراج الصفحات بنجاح!";
-                status.style.color = "#137333";
-
-            } catch (err) {
-                status.innerText = "❌ حدث خطأ أثناء استخراج الصفحات.";
-                status.style.color = "#d93025";
-            }
-        }
-
-        function downloadFile(bytes, filename) {
-            const blob = new Blob([bytes], { type: "application/pdf" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
-        }
-    </script>
-
-</body>
-</html>
+            const file1 = document.getElementById('pdfFile
