@@ -118,7 +118,7 @@
         }
         .file-label {
             display: block;
-            padding: 10px;
+            padding: 12px;
             background: #e8f0fe;
             color: #1967d2;
             border-radius: 8px;
@@ -162,14 +162,14 @@
             
             <div class="form-group">
                 <label>الملف الأساسي (الأول):</label>
-                <input type="file" id="pdfFile1" class="file-input" accept="application/pdf" onchange="updateFileLabel('pdfFile1', 'label1')">
-                <label for="pdfFile1" id="label1" class="file-label">اختر الملف الرئيسي 📄</label>
+                <input type="file" id="pdfFile1" class="file-input" accept=".pdf,application/pdf" onchange="updateFileLabel('pdfFile1', 'label1')">
+                <label for="pdfFile1" id="label1" class="file-label" onclick="document.getElementById('pdfFile1').click()">اضغط هنا لاختيار الملف الرئيسي 📄</label>
             </div>
 
             <div class="form-group">
                 <label>الملف الثاني (اختياري للدمج):</label>
-                <input type="file" id="pdfFile2" class="file-input" accept="application/pdf" onchange="updateFileLabel('pdfFile2', 'label2')">
-                <label for="pdfFile2" id="label2" class="file-label">اختر الملف الثاني 📑</label>
+                <input type="file" id="pdfFile2" class="file-input" accept=".pdf,application/pdf" onchange="updateFileLabel('pdfFile2', 'label2')">
+                <label for="pdfFile2" id="label2" class="file-label" onclick="document.getElementById('pdfFile2').click()">اضغط هنا لاختيار الملف الثاني 📑</label>
             </div>
         </div>
 
@@ -178,7 +178,7 @@
             <h3>2. تقليل حجم الملف (تجهيز للمناصات والواتساب) 📉</h3>
             
             <div class="form-group">
-                <label>مستوى الضغط المطلوبة:</label>
+                <label>مستوى الضغط المطلوب:</label>
                 <select id="compressLevel">
                     <option value="light">خفيف (تقليل بسيط حتى ~20% - أعلى جودة)</option>
                     <option value="medium" selected>متوسط (توفير بين 25% إلى 60% - للمواقع الحكومية)</option>
@@ -231,12 +231,17 @@
         function updateFileLabel(inputId, labelId) {
             const input = document.getElementById(inputId);
             const label = document.getElementById(labelId);
-            if (input.files.length > 0) {
-                const sizeMB = (input.files[0].size / (1024 * 1024)).toFixed(2);
-                label.innerText = "تم الاختيار: " + input.files[0].name + " (" + sizeMB + " MB)";
+            const status = document.getElementById('status');
+
+            if (input.files && input.files.length > 0) {
+                const file = input.files[0];
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                label.innerText = "تم الاختيار: " + file.name + " (" + sizeMB + " MB)";
                 label.style.background = "#e6f4ea";
                 label.style.color = "#137333";
                 label.style.borderColor = "#137333";
+                status.innerText = "✅ تم استلام الملف: " + file.name;
+                status.style.color = "#137333";
             }
         }
 
@@ -254,7 +259,8 @@
         }
 
         async function compressPDF() {
-            const file = document.getElementById('pdfFile1').files[0];
+            const fileInput = document.getElementById('pdfFile1');
+            const file = fileInput.files ? fileInput.files[0] : null;
             const status = document.getElementById('status');
             const resultBox = document.getElementById('compressResult');
             const level = document.getElementById('compressLevel').value;
@@ -279,16 +285,15 @@
 
                 const newPdfDoc = await PDFLib.PDFDocument.create();
 
-                // تحديد المعايير بدقة بناءً على المستوى المطلوب
                 let scale = 1.5;
-                let quality = 0.90; // خفيف (حتى 20%)
+                let quality = 0.90;
 
                 if (level === 'medium') {
                     scale = 1.1;
-                    quality = 0.65; // متوسط (25% إلى 60%)
+                    quality = 0.65;
                 } else if (level === 'heavy') {
                     scale = 0.85;
-                    quality = 0.45; // عالي (أعلى من 60%)
+                    quality = 0.45;
                 }
 
                 for (let i = 1; i <= numPages; i++) {
@@ -400,4 +405,74 @@
         }
 
         async function extractPDFPages() {
-            const file1 = document.getElementById('pdfFile
+            const file1 = document.getElementById('pdfFile1').files[0];
+            const pagesInput = document.getElementById('extractPages').value.trim();
+            const status = document.getElementById('status');
+
+            if (!file1) {
+                status.innerText = "❌ يرجى اختيار الملف الأساسي أولاً.";
+                status.style.color = "#d93025";
+                return;
+            }
+            if (!pagesInput) {
+                status.innerText = "❌ يرجى كتابة أرقام الصفحات المراد استخراجها.";
+                status.style.color = "#d93025";
+                return;
+            }
+
+            status.innerText = "⏳ جاري استخراج الصفحات...";
+            status.style.color = "#1a73e8";
+
+            try {
+                const docBytes = await file1.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(docBytes);
+                const newPdf = await PDFLib.PDFDocument.create();
+                const totalPages = pdfDoc.getPageCount();
+
+                let selectedIndices = [];
+                const parts = pagesInput.split(',');
+
+                for (let part of parts) {
+                    part = part.trim();
+                    if (part.includes('-')) {
+                        const [start, end] = part.split('-').map(num => parseInt(num));
+                        for (let i = start; i <= end; i++) {
+                            if (i >= 1 && i <= totalPages) selectedIndices.push(i - 1);
+                        }
+                    } else {
+                        const pageNum = parseInt(part);
+                        if (pageNum >= 1 && pageNum <= totalPages) selectedIndices.push(pageNum - 1);
+                    }
+                }
+
+                if (selectedIndices.length === 0) {
+                    status.innerText = "❌ لم يتم العثور على أرقام صفحات صالحة ضمن حدود المستند.";
+                    status.style.color = "#d93025";
+                    return;
+                }
+
+                const copiedPages = await newPdf.copyPages(pdfDoc, selectedIndices);
+                copiedPages.forEach(page => newPdf.addPage(page));
+
+                const newPdfBytes = await newPdf.save({ useObjectStreams: true });
+                downloadFile(newPdfBytes, "Extracted_Pages.pdf");
+                status.innerText = "✅ تم استخراج الصفحات بنجاح!";
+                status.style.color = "#137333";
+
+            } catch (err) {
+                status.innerText = "❌ حدث خطأ أثناء استخراج الصفحات.";
+                status.style.color = "#d93025";
+            }
+        }
+
+        function downloadFile(bytes, filename) {
+            const blob = new Blob([bytes], { type: "application/pdf" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+        }
+    </script>
+
+</body>
+</html>
