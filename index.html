@@ -4,7 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PdfNHF - محرر وضاغط الـ PDF الذكي</title>
+    <!-- مكتبة معالجة وبناء الـ PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <!-- مكتبة قراءة ورسم صفحات الـ PDF للضغط الحقيقي -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <style>
         * {
             box-sizing: border-box;
@@ -145,7 +151,7 @@
 
     <header>
         <h1>تطبيق PdfNHF</h1>
-        <p class="subtitle">الدمج، التقسيم، وتقليل حجم الملفات بسهولة</p>
+        <p class="subtitle">الدمج، التقسيم، والضغط الفعلي للملفات</p>
     </header>
 
     <div class="container">
@@ -167,19 +173,19 @@
             </div>
         </div>
 
-        <!-- قسم تقليل الحجم والضغط -->
+        <!-- قسم الضغط الحقيقي -->
         <div class="card">
-            <h3>2. تقليل حجم الملف (تجهيز للمواقع والواتساب) 📦</h3>
+            <h3>2. تقليل حجم الملف الفعلي (للآبار والمنصات) 📉</h3>
             
             <div class="form-group">
-                <label>مستوى الضغط المطلوب:</label>
+                <label>مستوى الضغط:</label>
                 <select id="compressLevel">
-                    <option value="light">خفيف (محافظة كاملة على الجودة العالية)</option>
-                    <option value="medium" selected>متوسط (مثالي للبريد والمنصات الحكومية)</option>
+                    <option value="light">خفيف (جودة عالية جداً وتوفير ممتاز)</option>
+                    <option value="medium" selected>متوسط (مثالي للمواقع الحكومية والواتساب)</option>
                 </select>
             </div>
 
-            <button class="btn btn-warning" onclick="compressPDF()">تقليل الحجم وتحميل الملف 📉</button>
+            <button class="btn btn-warning" onclick="compressPDF()">ضغط الملف وتقليل حجمه ⚡</button>
 
             <div id="compressResult" class="result-box"></div>
         </div>
@@ -250,14 +256,15 @@
             const file = document.getElementById('pdfFile1').files[0];
             const status = document.getElementById('status');
             const resultBox = document.getElementById('compressResult');
+            const level = document.getElementById('compressLevel').value;
 
             if (!file) {
-                status.innerText = "❌ يرجى اختيار الملف الأساسي أولاً معالجة حجمه.";
+                status.innerText = "❌ يرجى اختيار الملف الأساسي أولاً للضغط.";
                 status.style.color = "#d93025";
                 return;
             }
 
-            status.innerText = "⏳ جاري تحسين وتقليل حجم الملف...";
+            status.innerText = "⏳ جاري معالجة وضغط صفحات الملف...";
             status.style.color = "#e37400";
             resultBox.style.display = "none";
 
@@ -265,28 +272,59 @@
                 const arrayBuffer = await file.arrayBuffer();
                 const originalSize = file.size;
 
-                // تحميل وإعادة بناء المستند مع إزالة العناصر الزائدة
-                const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-                
-                const level = document.getElementById('compressLevel').value;
-                
-                // حفظ المستند مع ضغط الكائنات وإعادة تنظيم الهيكلة
-                const compressedBytes = await pdfDoc.save({
-                    useObjectStreams: true,
-                    addDefaultPage: false
-                });
+                // تحميل الملف باستخدام PDF.js لقراءة الصفحات
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                const pdfjsDoc = await loadingTask.promise;
+                const numPages = pdfjsDoc.numPages;
 
+                // إنشاء ملف PDF جديد باستخدام pdf-lib
+                const newPdfDoc = await PDFLib.PDFDocument.create();
+
+                // تحديد دقة وجودة الضغط بناءً على اختيار المستخدم
+                let scale = 1.0;
+                let quality = 0.65; // متوسط
+                if (level === 'light') {
+                    scale = 1.2;
+                    quality = 0.80; // خفيف
+                }
+
+                for (let i = 1; i <= numPages; i++) {
+                    const page = await pdfjsDoc.getPage(i);
+                    const viewport = page.getViewport({ scale: scale });
+                    
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                    // تحويل الصفحة إلى صورة مضغوطة بجودة محسنة
+                    const imgDataUrl = canvas.toDataURL('image/jpeg', quality);
+                    const jpgImageBytes = await fetch(imgDataUrl).then(res => res.arrayBuffer());
+                    
+                    const embeddedImage = await newPdfDoc.embedJpg(jpgImageBytes);
+                    const pdfPage = newPdfDoc.addPage([viewport.width, viewport.height]);
+                    pdfPage.drawImage(embeddedImage, {
+                        x: 0,
+                        y: 0,
+                        width: viewport.width,
+                        height: viewport.height,
+                    });
+                }
+
+                const compressedBytes = await newPdfDoc.save({ useObjectStreams: true });
                 const compressedSize = compressedBytes.length;
                 const savedSize = originalSize - compressedSize;
                 const percentSaved = Math.max(0, ((savedSize / originalSize) * 100)).toFixed(1);
 
                 downloadFile(compressedBytes, "Compressed_" + file.name);
 
-                status.innerText = "✅ تم الضغط والتحسين بنجاح!";
+                status.innerText = "✅ تم ضغط الملف بنجاح!";
                 status.style.color = "#137333";
 
                 resultBox.innerHTML = `
-                    <strong>📊 نتيجة تقليل الحجم:</strong><br>
+                    <strong>📊 نتيجة الضغط الفعلي:</strong><br>
                     • الحجم الأصلي: <b>${formatBytes(originalSize)}</b><br>
                     • الحجم الجديد: <b>${formatBytes(compressedSize)}</b><br>
                     • مقدار التوفير: <b>${savedSize > 0 ? formatBytes(savedSize) : '0 KB'}</b> (${percentSaved}%)
@@ -294,7 +332,8 @@
                 resultBox.style.display = "block";
 
             } catch (err) {
-                status.innerText = "❌ حدث خطأ أثناء عملية ضغط الملف.";
+                console.error(err);
+                status.innerText = "❌ حدث خطأ أثناء ضغط الملف.";
                 status.style.color = "#d93025";
             }
         }
@@ -333,7 +372,7 @@
                 } else if (position === 'custom') {
                     const customPage = parseInt(document.getElementById('insertAfterPage').value);
                     if (isNaN(customPage) || customPage < 1 || customPage > doc1PagesCount) {
-                        status.innerText = "❌ رقم الصفحة المحددة غير صحيح (الملف يحتوي " + doc1PagesCount + " صفحة).";
+                        status.innerText = "❌ رقم الصفحة المحددة غير صحيح.";
                         status.style.color = "#d93025";
                         return;
                     }
